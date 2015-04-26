@@ -1,33 +1,42 @@
 package mmbuw.com.brokenproject;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import android.webkit.WebView;
+import android.widget.EditText;
+import android.widget.Toast;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 import mmbuw.com.brokenproject.R;
 
 public class AnotherBrokenActivity extends Activity {
-
+    private String message;
+    private  Activity view = this;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_another_broken);
 
         Intent intent = getIntent();
-        String message = intent.getStringExtra(BrokenActivity.EXTRA_MESSAGE);
+        message = intent.getStringExtra(BrokenActivity.EXTRA_MESSAGE);
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         //What happens here? What is this? It feels like this is wrong.
         //Maybe the weird programmer who wrote this forgot to do something?
 
@@ -55,6 +64,7 @@ public class AnotherBrokenActivity extends Activity {
 
     public void fetchHTML(View view) throws IOException {
 
+        EditText ext_url = (EditText) findViewById(R.id.txt_url);
         //According to the exercise, you will need to add a button and an EditText first.
         //Then, use this function to call your http requests
         //Following hints:
@@ -63,25 +73,80 @@ public class AnotherBrokenActivity extends Activity {
         //Below, you find a staring point for your HTTP Requests - this code is in the wrong place and lacks the allowance to do what it wants
         //It will crash if you just un-comment it.
 
-        /*
-        Beginning of helper code for HTTP Request.
 
-        HttpClient client = new DefaultHttpClient();
-        HttpResponse response = client.execute(new HttpGet("http://lmgtfy.com/?q=android+ansync+task"));
-        StatusLine status = response.getStatusLine();
-        if (status.getStatusCode() == HttpStatus.SC_OK){
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            response.getEntity().writeTo(outStream);
-            String responseAsString = outStream.toString();
-             System.out.println("Response string: "+responseAsString);
-        }else {
-            //Well, this didn't work.
-            response.getEntity().getContent().close();
-            throw new IOException(status.getReasonPhrase());
+        GetHttpResponse getHttpResponse = new GetHttpResponse();
+        getHttpResponse.execute(ext_url.getText().toString());
+
+    /*
+
+            HttpClient client = new DefaultHttpClient();
+            HttpResponse response = client.execute(new HttpGet("http://lmgtfy.com/?q=android+ansync+task"));
+            StatusLine status = response.getStatusLine();
+            if (status.getStatusCode() == HttpStatus.SC_OK) {
+                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+                response.getEntity().writeTo(outStream);
+                String responseAsString = outStream.toString();
+                System.out.println("Response string: " + responseAsString);
+            } else {
+                //Well, this didn't work.
+                response.getEntity().getContent().close();
+                throw new IOException(status.getReasonPhrase());
+            }
+
+    * */
+
+
+    }
+
+    private class GetHttpResponse extends AsyncTask<String, Integer, String> {
+        HttpResponse httpResponse = null;
+        String responseAsString = null;
+        @Override
+        protected String doInBackground(String... urls) {
+
+            try {
+                String url = urls[0];
+
+                HttpClient client = new DefaultHttpClient();
+
+                httpResponse = client.execute(new HttpGet(url));
+
+                StatusLine status = httpResponse.getStatusLine();
+
+                if (status.getStatusCode() == HttpStatus.SC_OK) {
+                    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+                    httpResponse.getEntity().writeTo(outStream);
+                    responseAsString = outStream.toString();
+
+                } else {
+                    //Well, this didn't work.
+                    httpResponse.getEntity().getContent().close();
+                    throw new IOException(status.getReasonPhrase());
+                }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (ClientProtocolException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (IllegalStateException e){
+                e.printStackTrace();
+            } catch (IllegalArgumentException e){
+                e.printStackTrace();
+            }catch (Exception e){
+                e.printStackTrace();
+                Toast.makeText(view, "Error accrued!", Toast.LENGTH_SHORT).show();
+            }
+
+            return responseAsString;
         }
-
-          End of helper code!
-
-                  */
+        @Override
+        protected void onPostExecute(String result) {
+            //textView.setText(result);
+           // System.out.println("Response string: " + responseAsString);
+            WebView browser = (WebView) findViewById(R.id.wv_content);
+            browser.getSettings().setJavaScriptEnabled(true);
+            browser.loadData(responseAsString, "text/html", "UTF-8");
+        }
     }
 }

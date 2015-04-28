@@ -22,13 +22,17 @@ import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.UnknownHostException;
 
 import mmbuw.com.brokenproject.R;
 
 public class AnotherBrokenActivity extends Activity {
     private String message;
-    private  Activity view = this;
+    private Activity view = this;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,11 +105,21 @@ public class AnotherBrokenActivity extends Activity {
     private class GetHttpResponse extends AsyncTask<String, Integer, String> {
         HttpResponse httpResponse = null;
         String responseAsString = null;
+        String err = "";
+
         @Override
         protected String doInBackground(String... urls) {
 
             try {
                 String url = urls[0];
+
+               /* HttpURLConnection con =
+                        (HttpURLConnection) new URL(url).openConnection();
+                con.setRequestMethod("HEAD");
+                if (!(con.getResponseCode()   == HttpURLConnection.HTTP_OK)) {
+                    err = "url is not available!";
+                    return "Err";
+                }*/
 
                 HttpClient client = new DefaultHttpClient();
 
@@ -125,28 +139,39 @@ public class AnotherBrokenActivity extends Activity {
                 }
             } catch (MalformedURLException e) {
                 e.printStackTrace();
-            } catch (ClientProtocolException e) {
+                err = "wrong formed url!";
+            } catch (UnknownHostException e) {
                 e.printStackTrace();
-            } catch (IOException e) {
+                err = "Unknown Host!";
+            } catch (IllegalStateException e) {
                 e.printStackTrace();
-            } catch (IllegalStateException e){
+                err = "IllegalStateException";
+            } catch (IllegalArgumentException e) {
                 e.printStackTrace();
-            } catch (IllegalArgumentException e){
+                err = "IllegalArgumentException";
+            } catch (Exception e) {
                 e.printStackTrace();
-            }catch (Exception e){
-                e.printStackTrace();
-                Toast.makeText(view, "Error accrued!", Toast.LENGTH_SHORT).show();
+                err = "Error accrued!";
             }
 
             return responseAsString;
         }
+
         @Override
         protected void onPostExecute(String result) {
             //textView.setText(result);
-           // System.out.println("Response string: " + responseAsString);
+            // System.out.println("Response string: " + responseAsString);
             WebView browser = (WebView) findViewById(R.id.wv_content);
             browser.getSettings().setJavaScriptEnabled(true);
+
             browser.loadData(responseAsString, "text/html", "UTF-8");
+
+            if (!err.equals("")) {
+                Toast.makeText(view, err, Toast.LENGTH_SHORT).show();
+            }
+
+
         }
+
     }
 }
